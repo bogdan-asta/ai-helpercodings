@@ -30,5 +30,6 @@ export type TaskInput = z.infer<typeof taskSchema>;
 
 export function parseModelJson<T>(text: string, schema: z.ZodType<T>): T {
   const cleaned = text.trim().replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "");
+  if (!cleaned) throw new Error("AI model returned an empty response");
   return schema.parse(JSON.parse(cleaned));
 }

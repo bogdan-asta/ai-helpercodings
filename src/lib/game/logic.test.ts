@@ -28,4 +28,8 @@ describe("game calculations", () => {
     expect(parseModelJson(text, reviewSchema).score).toBe(80);
     expect(() => parseModelJson('{"score":101}', reviewSchema)).toThrow();
   });
+
+  it("reports empty model responses without leaking a JSON parser error", () => {
+    expect(() => parseModelJson(" \n ", reviewSchema)).toThrow("AI model returned an empty response");
+  });
 });

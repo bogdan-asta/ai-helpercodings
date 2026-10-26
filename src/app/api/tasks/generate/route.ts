@@ -4,6 +4,8 @@ import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { generateTask } from "@/lib/ai/openrouter";
 
+export const maxDuration = 60;
+
 const inputSchema = z.object({
   topic: z.string().trim().min(2).max(60).optional(),
   difficulty: z.number().int().min(1).max(3).optional(),
@@ -36,7 +38,7 @@ export async function POST(request: Request) {
     try {
       task = await generateTask(parsed.data.topic, parsed.data.difficulty, (issued ?? []).map(row => row.title));
     } catch (error) {
-      console.error("PromptCoach task provider error", error);
+      console.error("PromptCoach task generation provider error", error);
       if (error instanceof Error && error.message === "ИИ пока не подключён") {
         return NextResponse.json({ error: error.message }, { status: 503 });
       }

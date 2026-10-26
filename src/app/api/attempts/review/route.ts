@@ -5,6 +5,8 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { reviewPrompt } from "@/lib/ai/openrouter";
 import { levelForXp, nextStreak, xpForRepeat } from "@/lib/game/logic";
 
+export const maxDuration = 60;
+
 const inputSchema = z.object({
   taskId: z.string().uuid(),
   promptText: z.string().trim().min(1).max(1500),

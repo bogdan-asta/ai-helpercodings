@@ -26,7 +26,7 @@ function client() {
   return new OpenAI({
     apiKey: key,
     baseURL: "https://openrouter.ai/api/v1",
-    timeout: 30_000,
+    timeout: 20_000,
     maxRetries: 0,
   });
 }
@@ -39,7 +39,7 @@ async function completeJson<T>(system: string, user: string, model: string, temp
     } = {
       model,
       temperature,
-      max_tokens: 1800,
+      max_tokens: 2400,
       response_format: { type: "json_object" },
       reasoning: { effort: "low", exclude: true },
       messages: [
@@ -48,10 +48,26 @@ async function completeJson<T>(system: string, user: string, model: string, temp
       ],
     };
     const result = await ai.chat.completions.create(request);
+    const choice = result.choices[0];
+    const content = choice?.message.content;
     try {
-      return parseModelJson(result.choices[0]?.message.content ?? "", schema);
+      if (choice?.finish_reason === "length") {
+        throw new Error("AI model response was truncated");
+      }
+      if (typeof content !== "string" || !content.trim()) {
+        throw new Error("AI model returned no content");
+      }
+      return parseModelJson(content, schema);
     } catch (error) {
-      if (attempt === 1) throw error;
+      console.warn("OpenRouter returned an empty, truncated, or invalid JSON response", {
+        attempt: attempt + 1,
+        finishReason: choice?.finish_reason ?? "missing",
+        responseLength: typeof content === "string" ? content.length : 0,
+        errorType: error instanceof Error ? error.name : "UnknownError",
+      });
+      if (attempt === 1) {
+        throw new Error("ИИ вернул пустой или некорректный ответ. Попробуй ещё раз.");
+      }
     }
   }
   throw new Error("Не удалось получить корректный ответ ИИ");
