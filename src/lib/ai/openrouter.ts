@@ -34,15 +34,20 @@ function client() {
 async function completeJson<T>(system: string, user: string, model: string, temperature: number, schema: import("zod").ZodType<T>) {
   const ai = client();
   for (let attempt = 0; attempt < 2; attempt += 1) {
-    const result = await ai.chat.completions.create({
+    const request: OpenAI.Chat.Completions.ChatCompletionCreateParamsNonStreaming & {
+      reasoning: { effort: "low"; exclude: boolean };
+    } = {
       model,
       temperature,
-      max_tokens: 1200,
+      max_tokens: 1800,
+      response_format: { type: "json_object" },
+      reasoning: { effort: "low", exclude: true },
       messages: [
         { role: "system", content: system },
         { role: "user", content: user + (attempt ? "\nВерни исправленный JSON строго по схеме, без markdown." : "") },
       ],
-    });
+    };
+    const result = await ai.chat.completions.create(request);
     try {
       return parseModelJson(result.choices[0]?.message.content ?? "", schema);
     } catch (error) {
